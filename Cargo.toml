@@ -1,0 +1,17 @@
+[package]
+name = "agent-hooks"
+version = "0.1.0"
+edition = "2021"
+authors = ["Agent Hand Contributors"]
+description = "Unified hook adapter for AI CLI tools (Claude Code, Cursor, Codex, Windsurf, Kiro, OpenCode, Gemini)"
+license = "MIT"
+repository = "https://github.com/weykon/agent-hooks"
+keywords = ["ai", "cli", "hooks", "claude", "cursor"]
+categories = ["development-tools"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+dirs = "5"
+thiserror = "1"
