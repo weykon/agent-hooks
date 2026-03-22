@@ -49,10 +49,10 @@ impl ToolAdapter for CodexAdapter {
         let Ok(content) = std::fs::read_to_string(&path) else {
             return false;
         };
-        content.contains("hook_event_bridge")
+        content.contains("hook_event_bridge") || content.contains("agent-hand-bridge")
     }
 
-    fn register_hooks(&self, bridge_script: &Path) -> Result<()> {
+    fn register_hooks(&self, hook_cmd: &Path) -> Result<()> {
         let path = self.hooks_path().ok_or(AdapterError::NoHomeDir)?;
         detection::ensure_parent_dir(&path)?;
 
@@ -67,7 +67,7 @@ impl ToolAdapter for CodexAdapter {
             .as_object_mut()
             .ok_or_else(|| AdapterError::Config("Invalid hooks.json".into()))?;
 
-        let cmd = bridge_script.to_string_lossy().to_string();
+        let cmd = hook_cmd.to_string_lossy().to_string();
 
         for event in EVENTS {
             let arr = obj.entry(*event).or_insert_with(|| json!([]));
@@ -113,7 +113,7 @@ impl ToolAdapter for CodexAdapter {
                 arr.retain(|h| {
                     !h.get("command")
                         .and_then(|c| c.as_str())
-                        .is_some_and(|c| c.contains("hook_event_bridge"))
+                        .is_some_and(|c| c.contains("hook_event_bridge") || c.contains("agent-hand-bridge"))
                 });
                 if arr.len() != before {
                     modified = true;

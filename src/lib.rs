@@ -91,8 +91,8 @@ pub trait ToolAdapter: Send + Sync {
 
     /// Register agent-hand hooks into this tool's config.
     ///
-    /// `bridge_script` is the absolute path to `hook_event_bridge.sh`.
-    fn register_hooks(&self, bridge_script: &Path) -> Result<()>;
+    /// `hook_cmd` is the absolute path to the hook command (typically `agent-hand-bridge`).
+    fn register_hooks(&self, hook_cmd: &Path) -> Result<()>;
 
     /// Remove agent-hand hooks from this tool's config.
     fn unregister_hooks(&self) -> Result<()>;
@@ -153,11 +153,11 @@ pub fn detect_all() -> Vec<ToolInfo> {
 /// Auto-register hooks for all detected (but unregistered) tools.
 ///
 /// Returns the names of tools that were successfully registered.
-pub fn auto_register_all(bridge_script: &Path) -> Vec<String> {
+pub fn auto_register_all(hook_cmd: &Path) -> Vec<String> {
     let mut registered = Vec::new();
     for adapter in all_adapters() {
         if adapter.is_installed() && !adapter.hooks_registered() {
-            if adapter.register_hooks(bridge_script).is_ok() {
+            if adapter.register_hooks(hook_cmd).is_ok() {
                 registered.push(adapter.display_name().to_string());
             }
         }

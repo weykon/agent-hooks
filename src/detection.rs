@@ -15,6 +15,7 @@ pub fn home_dir_exists(rel_path: &str) -> bool {
 }
 
 /// Check if a file exists under the home directory.
+#[allow(dead_code)]
 pub fn home_file_exists(rel_path: &str) -> bool {
     home_dir()
         .map(|h| h.join(rel_path).is_file())

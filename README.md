@@ -42,15 +42,15 @@ for info in detect_all() {
 //   ...
 
 // Auto-register hooks for all detected tools
-let bridge = Path::new("/path/to/hook_event_bridge.sh");
-let registered = auto_register_all(bridge);
+let hook_cmd = Path::new("/path/to/agent-hand-bridge");
+let registered = auto_register_all(hook_cmd);
 println!("Registered: {:?}", registered);
 
 // Or work with a specific adapter
 use agent_hooks::CursorAdapter;
 let cursor = CursorAdapter::new();
 if cursor.is_installed() && !cursor.hooks_registered() {
-    cursor.register_hooks(bridge).unwrap();
+    cursor.register_hooks(hook_cmd).unwrap();
 }
 ```
 
@@ -62,7 +62,7 @@ pub trait ToolAdapter: Send + Sync {
     fn display_name(&self) -> &str;
     fn is_installed(&self) -> bool;
     fn hooks_registered(&self) -> bool;
-    fn register_hooks(&self, bridge_script: &Path) -> Result<()>;
+    fn register_hooks(&self, hook_cmd: &Path) -> Result<()>;
     fn unregister_hooks(&self) -> Result<()>;
     fn config_path(&self) -> Option<PathBuf>;
     fn supported_events(&self) -> &[&str];
@@ -88,7 +88,7 @@ impl ToolAdapter for MyToolAdapter {
 
 ## Event Bridge
 
-All tools' events get normalized to a common format via `hook_event_bridge.sh`:
+All tools' events get normalized to a common format via `agent-hand-bridge`:
 
 ```jsonl
 {"tmux_session":"agent-0","kind":{"type":"stop"},"session_id":"abc123","cwd":"/project","ts":1709568000}

@@ -19,6 +19,8 @@ const EVENTS: &[&str] = &[
     "UserPromptSubmit",
     "SubagentStart",
     "PreCompact",
+    "PreToolUse",
+    "PostToolUse",
 ];
 
 pub struct ClaudeAdapter;
@@ -158,14 +160,14 @@ impl ClaudeAdapter {
             return false;
         };
 
-        // Check if any event has a hook command containing "hook_event_bridge"
+        // Check if any event has a hook command containing our bridge identifiers
         for event in EVENTS {
             if let Some(arr) = hooks.get(*event).and_then(|v| v.as_array()) {
                 for item in arr {
                     if let Some(inner) = item.get("hooks").and_then(|h| h.as_array()) {
                         for h in inner {
                             if let Some(cmd) = h.get("command").and_then(|c| c.as_str()) {
-                                if cmd.contains("hook_event_bridge") {
+                                if cmd.contains("hook_event_bridge") || cmd.contains("agent-hand-bridge") {
                                     return true;
                                 }
                             }
@@ -198,11 +200,11 @@ impl ToolAdapter for ClaudeAdapter {
             .unwrap_or(false)
     }
 
-    fn register_hooks(&self, bridge_script: &Path) -> Result<()> {
+    fn register_hooks(&self, hook_cmd: &Path) -> Result<()> {
         let settings = self
             .settings_path()
             .ok_or(AdapterError::NoHomeDir)?;
-        let cmd = bridge_script.to_string_lossy().to_string();
+        let cmd = hook_cmd.to_string_lossy().to_string();
 
         for event in EVENTS {
             self.register_event(&settings, &cmd, event)?;
@@ -215,17 +217,19 @@ impl ToolAdapter for ClaudeAdapter {
             .settings_path()
             .ok_or(AdapterError::NoHomeDir)?;
 
-        // Find the bridge command to remove
-        let cmd = detection::home_path(".agent-hand/hooks/hook_event_bridge.sh")
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or_default();
+        // Remove both legacy shell script and new binary hook commands
+        let cmds: Vec<String> = [
+            ".agent-hand/hooks/hook_event_bridge.sh",
+            ".agent-hand/bin/agent-hand-bridge",
+        ]
+        .iter()
+        .filter_map(|rel| detection::home_path(rel).map(|p| p.to_string_lossy().to_string()))
+        .collect();
 
-        if cmd.is_empty() {
-            return Ok(());
-        }
-
-        for event in EVENTS {
-            self.unregister_event(&settings, &cmd, event)?;
+        for cmd in &cmds {
+            for event in EVENTS {
+                self.unregister_event(&settings, cmd, event)?;
+            }
         }
         Ok(())
     }
